@@ -4,11 +4,11 @@ import csv
 import tweepy
 
 
-def get_user_ids(number_of_ids_to_get, get_user_profile = False):
+def get_user_ids(number_of_ids_to_get, get_user_profile=True):
     ids = []
 
     # text file to save verified user ID's
-    verified_user_ids = open("VerifiedUserIDs_Sample.csv", "w")
+    verified_user_ids = open("VerifiedUserIDsSample.csv", "w")
     writer = csv.writer(verified_user_ids)
 
     for page in tweepy.Cursor(constants.api.followers_ids, screen_name="verified").pages():
@@ -17,7 +17,7 @@ def get_user_ids(number_of_ids_to_get, get_user_profile = False):
             writer.writerow([id_number])
         ids.extend(page)
         if len(ids) >= number_of_ids_to_get:
-            print(number_of_ids_to_get + " ids acquired")
+            print(str(number_of_ids_to_get) + " ids acquired")
             break
         time.sleep(60)
         print("Current number of ids " + str(len(ids)))
@@ -26,8 +26,18 @@ def get_user_ids(number_of_ids_to_get, get_user_profile = False):
         get_user_profiles(ids)
 
 
+def read_user_id_csv(file_name):
+    user_ids = []
+    with open(str(file_name), 'r') as csvfile:
+        reader = csv.reader(csvfile)
+        for row in reader:
+            user_ids.extend(row)
+    print("Done Reading User ID's")
+    get_user_profiles(user_ids)
+
+
 def get_user_profiles(ids):
-    verified_screen_names = open("userData.csv", "w")
+    verified_screen_names = open("userDataSample.csv", "w")
     user_data_writer = csv.writer(verified_screen_names)
     header = ["id", "username", "screen_name", "location", "url", "description", "followers", "following",
               "favorite_count", "tweet_count", "created_at", "time_zone", "geo_enabled", "language",
@@ -50,5 +60,5 @@ def get_user_profiles(ids):
                          user.default_profile_image]
             user_data_writer.writerow(user_data)
 
-    print("Done")
+    print("Done downloading user profiles")
     # END
