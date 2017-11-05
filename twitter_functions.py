@@ -8,7 +8,7 @@ def get_user_ids(number_of_ids_to_get, get_user_profile=True):
     ids = []
 
     # text file to save verified user ID's
-    verified_user_ids = open("VerifiedUserIDsSample.csv", "w")
+    verified_user_ids = open("VerifiedUserIDs.csv", "w")
     writer = csv.writer(verified_user_ids)
 
     for page in tweepy.Cursor(constants.api.followers_ids, screen_name="verified").pages():
@@ -26,7 +26,7 @@ def get_user_ids(number_of_ids_to_get, get_user_profile=True):
         get_user_profiles(ids)
 
 
-def read_user_id_csv(file_name):
+def read_user_id_csv(file_name, get_tweets=False):
     user_ids = []
     with open(str(file_name), 'r') as csvfile:
         reader = csv.reader(csvfile)
@@ -35,9 +35,12 @@ def read_user_id_csv(file_name):
     print("Done Reading User ID's")
     get_user_profiles(user_ids)
 
+    if get_tweets:
+        get_user_tweets(user_ids)
+
 
 def get_user_profiles(ids):
-    verified_screen_names = open("userDataSample.csv", "w")
+    verified_screen_names = open("VerifiedUserData.csv", "w")
     user_data_writer = csv.writer(verified_screen_names)
     header = ["id", "username", "screen_name", "location", "url", "description", "followers", "following",
               "favorite_count", "tweet_count", "created_at", "time_zone", "geo_enabled", "language",
@@ -49,7 +52,10 @@ def get_user_profiles(ids):
     sliced_ids = [ids[x:x + 100] for x in range(0, len(ids), 100)]
     # print(sliced_ids)
 
+    count = 0
     for id_slice in sliced_ids:
+        print("On slice " + str(count) + " out of " + str(len(sliced_ids)))
+        count += 1
         user_slice = constants.api.lookup_users(user_ids=id_slice)
         for user in user_slice:
             # Twitter User Model https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/user-object
@@ -61,4 +67,24 @@ def get_user_profiles(ids):
             user_data_writer.writerow(user_data)
 
     print("Done downloading user profiles")
+    # END
+
+
+def get_user_tweets(user_ids):
+    all_user_tweets = open("VerifiedUserTweets.csv", "w")
+    writer = csv.writer(all_user_tweets)
+
+    count = 0
+    for user_id in user_ids:
+        print("On id " + str(count) + " out of " + str(len(user_ids)))
+        count += 1
+        user_tweets = constants.api.user_timeline(user_id=user_id, count=100)
+
+        last_100_tweets = []
+        for tweet in user_tweets:
+            last_100_tweets.append(tweet.text)
+        # END
+        writer.writerow(last_100_tweets)
+
+    print("Done downloading user tweets")
     # END
