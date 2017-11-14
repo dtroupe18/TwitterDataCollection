@@ -26,14 +26,16 @@ def get_user_ids(number_of_ids_to_get, get_user_profile=True):
         get_user_profiles(ids)
 
 
-def read_user_id_csv(file_name, get_tweets=False):
+def read_user_id_csv(file_name, get_profiles=False, get_tweets=False):
     user_ids = []
     with open(str(file_name), 'r') as csvfile:
         reader = csv.reader(csvfile)
         for row in reader:
             user_ids.extend(row)
     print("Done Reading User ID's")
-    get_user_profiles(user_ids)
+
+    if get_profiles:
+        get_user_profiles(user_ids)
 
     if get_tweets:
         get_user_tweets(user_ids)
@@ -72,19 +74,44 @@ def get_user_profiles(ids):
 
 def get_user_tweets(user_ids):
     all_user_tweets = open("VerifiedUserTweets.csv", "w")
+    tweet_info = open("VerifiedUserTweetInfo.csv", "w")
+
     writer = csv.writer(all_user_tweets)
+    writer2 = csv.writer(tweet_info)
 
     count = 0
     for user_id in user_ids:
-        print("On id " + str(count) + " out of " + str(len(user_ids)))
-        count += 1
-        user_tweets = constants.api.user_timeline(user_id=user_id, count=100)
+        try:
+            print("On id " + str(count) + " out of " + str(len(user_ids)))
+            print("Current id: " + str(user_id))
+            count += 1
+            user_tweets = constants.api.user_timeline(user_id=user_id, count=100)
 
-        last_100_tweets = []
-        for tweet in user_tweets:
-            last_100_tweets.append(tweet.text)
-        # END
-        writer.writerow(last_100_tweets)
+            last_100_tweets = []
+            last_100_tweets.append(user_id)  # id first then all of the tweets
+
+            for tweet in user_tweets:
+                last_100_tweets.append(tweet.text)
+
+                if tweet.in_reply_to_status_id is not None:
+                    is_reply = True
+                else:
+                    is_reply = False
+
+                if tweet.retweet_count > 0:
+                    ratio = tweet.favorite_count / float(tweet.retweet_count)
+                else:
+                    ratio = 0
+
+                info = [tweet.source, tweet.lang, tweet.favorite_count, tweet.retweet_count,
+                    ratio, tweet.is_quote_status, is_reply]
+                writer2.writerow(info)
+            # END
+            writer.writerow(last_100_tweets)
+        except tweepy.TweepError:
+            print("Failed to run command on user " + str(user_id) + " this user will be skipped")
 
     print("Done downloading user tweets")
     # END
+
+
